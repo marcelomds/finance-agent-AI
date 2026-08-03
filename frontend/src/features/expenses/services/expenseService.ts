@@ -2,9 +2,9 @@ import { api } from '../../../services/api';
 import type { ApiSuccessResponse } from '../../../types/apiResponse';
 import type { CreateExpenseInput, Expense } from '../types/expense';
 
-export async function fetchExpenses(userId: string): Promise<Expense[]> {
+export async function fetchExpenses(organizationId: string): Promise<Expense[]> {
   const res = await api.get<ApiSuccessResponse<Expense[]>>('/api/expenses', {
-    params: { userId },
+    params: { organizationId },
   });
   return res.data.data;
 }

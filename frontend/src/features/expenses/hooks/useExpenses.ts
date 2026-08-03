@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchExpenses } from '../services/expenseService';
 
-export function useExpenses(userId: string) {
+export function useExpenses(organizationId: string) {
   return useQuery({
-    queryKey: ['expenses', userId],
-    queryFn: () => fetchExpenses(userId),
-    enabled: Boolean(userId),
+    queryKey: ['expenses', organizationId],
+    queryFn: () => fetchExpenses(organizationId),
+    enabled: Boolean(organizationId),
   });
 }

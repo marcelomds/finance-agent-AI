@@ -1,0 +1,60 @@
+{
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "loading": "Carregando...",
+    "adding": "Adicionando...",
+    "active": "Ativa",
+    "inactive": "Inativa"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "expenses": "Despesas",
+    "categories": "Categorias"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Visão geral do processamento de despesas da sua empresa.",
+    "totalExpenses": "Total de Despesas",
+    "processing": "Processando",
+    "approved": "Aprovadas",
+    "categoriesCount": "Categorias",
+    "recentExpenses": "Despesas Recentes"
+  },
+  "expenses": {
+    "title": "Despesas",
+    "subtitle": "Todas as despesas enviadas pela sua empresa.",
+    "fileNamePlaceholder": "recibo.pdf",
+    "addExpense": "Adicionar despesa",
+    "noExpenses": "Nenhuma despesa ainda.",
+    "columns": {
+      "file": "Arquivo",
+      "status": "Status",
+      "category": "Categoria",
+      "created": "Criado em"
+    },
+    "status": {
+      "processing": "processando",
+      "approved": "aprovado",
+      "rejected": "rejeitado",
+      "escalated": "escalado"
+    }
+  },
+  "categories": {
+    "title": "Categorias",
+    "subtitle": "Gerencie as categorias usadas para classificar despesas da sua empresa.",
+    "namePlaceholder": "Nome da nova categoria",
+    "addCategory": "Adicionar categoria",
+    "noCategories": "Nenhuma categoria ainda.",
+    "columns": {
+      "name": "Nome",
+      "slug": "Slug",
+      "status": "Status"
+    }
+  },
+  "language": {
+    "label": "Idioma"
+  }
+}

@@ -1,10 +1,21 @@
-import { ExpensesDashboard } from './features/expenses/components/ExpensesDashboard';
-
-// TODO: replace with the real logged-in user once auth exists
-const TEST_USER_ID = 'cmsdi55s400001dp9kvzuuh89';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { AppLayout } from './components/layout/AppLayout';
+import { DashboardPage } from './features/dashboard/components/DashboardPage';
+import { ExpensesPage } from './features/expenses/components/ExpensesPage';
+import { CategoriesPage } from './features/categories/components/CategoriesPage';
 
 function App() {
-  return <ExpensesDashboard userId={TEST_USER_ID} />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="expenses" element={<ExpensesPage />} />
+          <Route path="categories" element={<CategoriesPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;

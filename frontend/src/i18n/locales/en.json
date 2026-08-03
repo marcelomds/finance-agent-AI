@@ -1,0 +1,60 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "loading": "Loading...",
+    "adding": "Adding...",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "expenses": "Expenses",
+    "categories": "Categories"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of your organization's expense processing.",
+    "totalExpenses": "Total Expenses",
+    "processing": "Processing",
+    "approved": "Approved",
+    "categoriesCount": "Categories",
+    "recentExpenses": "Recent Expenses"
+  },
+  "expenses": {
+    "title": "Expenses",
+    "subtitle": "All expenses submitted by your organization.",
+    "fileNamePlaceholder": "receipt.pdf",
+    "addExpense": "Add expense",
+    "noExpenses": "No expenses yet.",
+    "columns": {
+      "file": "File",
+      "status": "Status",
+      "category": "Category",
+      "created": "Created"
+    },
+    "status": {
+      "processing": "processing",
+      "approved": "approved",
+      "rejected": "rejected",
+      "escalated": "escalated"
+    }
+  },
+  "categories": {
+    "title": "Categories",
+    "subtitle": "Manage the categories used to classify expenses for your organization.",
+    "namePlaceholder": "New category name",
+    "addCategory": "Add category",
+    "noCategories": "No categories yet.",
+    "columns": {
+      "name": "Name",
+      "slug": "Slug",
+      "status": "Status"
+    }
+  },
+  "language": {
+    "label": "Language"
+  }
+}

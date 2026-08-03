@@ -7,7 +7,7 @@ export function useCreateExpense() {
   return useMutation({
     mutationFn: createExpense,
     onSuccess: (expense) => {
-      queryClient.invalidateQueries({ queryKey: ['expenses', expense.userId] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', expense.organizationId] });
     },
   });
 }

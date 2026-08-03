@@ -1,31 +1,36 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useOrganization } from '../../../contexts/OrganizationContext';
-import { useCreateExpense } from '../hooks/useCreateExpense';
+import { useCreateCategory } from '../hooks/useCategoryMutations';
 
-export function ExpenseForm() {
+function slugify(name: string): string {
+  return name
+    .trim()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // strip accents (á -> a, ç -> c, etc)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+export function CategoryForm() {
   const { t } = useTranslation();
-  const { organizationId, userId } = useOrganization();
-  const [fileName, setFileName] = useState('');
-  const { mutate, isPending, error } = useCreateExpense();
+  const [name, setName] = useState('');
+  const { mutate, isPending, error } = useCreateCategory();
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!fileName) return;
+    if (!name) return;
 
-    mutate(
-      { organizationId, userId, fileName, s3Key: `receipts/${Date.now()}-${fileName}` },
-      { onSuccess: () => setFileName('') },
-    );
+    mutate({ name, slug: slugify(name) }, { onSuccess: () => setName('') });
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
       <input
         type="text"
-        value={fileName}
-        onChange={(e) => setFileName(e.target.value)}
-        placeholder={t('expenses.fileNamePlaceholder')}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder={t('categories.namePlaceholder')}
         className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
       />
       <button
@@ -33,7 +38,7 @@ export function ExpenseForm() {
         disabled={isPending}
         className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
       >
-        {isPending ? t('common.adding') : t('expenses.addExpense')}
+        {isPending ? t('common.adding') : t('categories.addCategory')}
       </button>
       {error && <span className="self-center text-sm text-red-600">{error.message}</span>}
     </form>

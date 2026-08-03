@@ -9,69 +9,116 @@ datasource db {
   provider = "postgresql"
 }
 
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+
+  users             User[]
+  expenses          Expense[]
+  bankTransactions  BankTransaction[]
+  categories        Category[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String
   passwordHash String?
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   expenses  Expense[]
   bankTransactions BankTransaction[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
 }
 
 model Expense {
   id                  String   @id @default(cuid())
+
+  organizationId      String
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   userId              String
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   fileName            String
   s3Key               String
   originalFileUrl     String?
-  
+
   // Status: processing, extracted, classified, validated, approved, rejected, escalated
   status              String   @default("processing")
-  
+
   // Extracted Data
   extractedData       Json?    // { vendor, amount, currency, date, description, confidence }
-  
+
   // Classification
-  category            String?  // travel_accommodation, travel_flights, etc
+  categoryId          String?
+  category            Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   categoryConfidence  Float?
-  
+
   // Validation
   validationIssues    String[]
   validationPassed    Boolean?
-  
+
   // Reconciliation
   matchedBankTxnId    String?
   matchedBankTxn      BankTransaction? @relation(fields: [matchedBankTxnId], references: [id], onDelete: SetNull)
   reconciled          Boolean? @default(false)
-  
+
   // Approval/Rejection
   approvedAt          DateTime?
   approvedBy          String?
   rejectionReason     String?
-  
+
   // Escalation
   escalatedAt         DateTime?
   escalationReason    String?
   escalationStatus    String?  // pending, approved_by_human, rejected_by_human
-  
+
   // Timestamps
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   processingLogs      ProcessingLog[]
 
+  @@index([organizationId])
   @@index([userId])
   @@index([status])
-  @@index([category])
+  @@index([categoryId])
   @@index([createdAt])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name      String
+  slug      String
+  isActive  Boolean   @default(true)
+  expenses  Expense[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([organizationId, name])
+  @@unique([organizationId, slug])
 }
 
 model BankTransaction {
   id            String   @id @default(cuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -85,6 +132,7 @@ model BankTransaction {
 
   matchedExpenses Expense[]
 
+  @@index([organizationId])
   @@index([userId])
   @@index([date])
   @@index([amount])
