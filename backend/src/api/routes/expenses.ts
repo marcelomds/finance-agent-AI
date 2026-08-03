@@ -1,7 +1,17 @@
 import { Router } from 'express';
-import { createExpenseController, listExpensesController } from '../controllers/expenseController';
+import {
+  createExpenseController,
+  getExpenseFileUrlController,
+  listExpensesController,
+  processExpenseController,
+  uploadExpenseController,
+} from '../controllers/expenseController';
+import { uploadReceipt } from '../middleware/upload';
 
 export const expenseRouter = Router();
 
 expenseRouter.get('/api/expenses', listExpensesController);
 expenseRouter.post('/api/expenses', createExpenseController);
+expenseRouter.post('/api/expenses/upload', uploadReceipt, uploadExpenseController);
+expenseRouter.get('/api/expenses/:id/file-url', getExpenseFileUrlController);
+expenseRouter.post('/api/expenses/:id/process', processExpenseController);

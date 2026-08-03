@@ -28,3 +28,9 @@ export async function createExpense(input: CreateExpenseInput) {
     throw err;
   }
 }
+
+export async function getExpenseById(organizationId: string, id: string) {
+  const expense = await prisma.expense.findFirst({ where: { id, organizationId } });
+  if (!expense) throw new NotFoundError('Expense not found');
+  return expense;
+}

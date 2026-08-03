@@ -22,3 +22,9 @@ export class ConflictError extends AppError {
     super(message, 409);
   }
 }
+
+export class ClassificationError extends AppError {
+  constructor(message = 'Failed to classify expense') {
+    super(message, 502);
+  }
+}

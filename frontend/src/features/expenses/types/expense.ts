@@ -19,11 +19,3 @@ export type Expense = {
   createdAt: string;
   updatedAt: string;
 };
-
-export type CreateExpenseInput = {
-  organizationId: string;
-  userId: string;
-  fileName: string;
-  s3Key: string;
-  originalFileUrl?: string;
-};

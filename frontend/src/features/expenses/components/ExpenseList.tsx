@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useOrganization } from '../../../contexts/OrganizationContext';
+import { fetchExpenseFileUrl } from '../services/expenseService';
 import type { Expense } from '../types/expense';
 
 const statusStyle: Record<string, string> = {
@@ -10,6 +13,18 @@ const statusStyle: Record<string, string> = {
 
 export function ExpenseList({ expenses }: { expenses: Expense[] }) {
   const { t } = useTranslation();
+  const { organizationId } = useOrganization();
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  async function handleView(expenseId: string) {
+    setLoadingId(expenseId);
+    try {
+      const url = await fetchExpenseFileUrl(organizationId, expenseId);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } finally {
+      setLoadingId(null);
+    }
+  }
 
   if (expenses.length === 0) {
     return (
@@ -28,6 +43,7 @@ export function ExpenseList({ expenses }: { expenses: Expense[] }) {
             <th className="px-4 py-3 font-medium">{t('expenses.columns.status')}</th>
             <th className="px-4 py-3 font-medium">{t('expenses.columns.category')}</th>
             <th className="px-4 py-3 font-medium">{t('expenses.columns.created')}</th>
+            <th className="px-4 py-3"></th>
           </tr>
         </thead>
         <tbody>
@@ -52,6 +68,15 @@ export function ExpenseList({ expenses }: { expenses: Expense[] }) {
               </td>
               <td className="px-4 py-3 text-gray-500 dark:text-gray-500">
                 {new Date(expense.createdAt).toLocaleDateString()}
+              </td>
+              <td className="px-4 py-3 text-right">
+                <button
+                  onClick={() => handleView(expense.id)}
+                  disabled={loadingId === expense.id}
+                  className="text-xs font-medium text-purple-600 hover:text-purple-800 disabled:opacity-50"
+                >
+                  {t('expenses.viewFile')}
+                </button>
               </td>
             </tr>
           ))}

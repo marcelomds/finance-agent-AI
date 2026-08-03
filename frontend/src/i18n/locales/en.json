@@ -26,9 +26,10 @@
   "expenses": {
     "title": "Expenses",
     "subtitle": "All expenses submitted by your organization.",
-    "fileNamePlaceholder": "receipt.pdf",
     "addExpense": "Add expense",
+    "uploadHint": "PDF, JPG, or PNG, up to 10MB",
     "noExpenses": "No expenses yet.",
+    "viewFile": "View",
     "columns": {
       "file": "File",
       "status": "Status",
