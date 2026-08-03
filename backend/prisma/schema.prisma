@@ -15,6 +15,7 @@ model User {
   name      String
   passwordHash String?
   expenses  Expense[]
+  bankTransactions BankTransaction[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -44,6 +45,7 @@ model Expense {
   
   // Reconciliation
   matchedBankTxnId    String?
+  matchedBankTxn      BankTransaction? @relation(fields: [matchedBankTxnId], references: [id], onDelete: SetNull)
   reconciled          Boolean? @default(false)
   
   // Approval/Rejection
@@ -59,7 +61,9 @@ model Expense {
   // Timestamps
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
-  
+
+  processingLogs      ProcessingLog[]
+
   @@index([userId])
   @@index([status])
   @@index([category])
@@ -69,15 +73,18 @@ model Expense {
 model BankTransaction {
   id            String   @id @default(cuid())
   userId        String
-  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   amount        Float
   currency      String   @default("EUR")
   date          DateTime
   description   String
   transactionId String?
-  
+
   createdAt     DateTime @default(now())
-  
+
+  matchedExpenses Expense[]
+
   @@index([userId])
   @@index([date])
   @@index([amount])
@@ -86,17 +93,18 @@ model BankTransaction {
 model ProcessingLog {
   id          String   @id @default(cuid())
   expenseId   String
-  
+  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
   step        String   // vision_extract, classification, validation, reconciliation, approval
   status      String   // success, failed
   message     String?
   error       String?
-  
+
   duration    Int?     // milliseconds
   tokensUsed  Int?
-  
+
   createdAt   DateTime @default(now())
-  
+
   @@index([expenseId])
   @@index([step])
 }

@@ -1,21 +1,14 @@
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
+import express from 'express';
+import { healthRouter } from './api/routes/health';
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+const app = express();
+const port = process.env.PORT ?? 3000;
 
-async function main() {
-  console.log('🚀 connecting to database...');
+// Register routes
+app.use(healthRouter);
 
-  // Simple test: list users
-  const users = await prisma.user.findMany();
-  console.log('✅ connected to database. Users:', users);
-}
 
-main()
-  .catch((e) => {
-    console.error('❌ Error connecting to database:', e);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// Start the server
+app.listen(port, () => {
+  console.log(`🚀 API listening on port ${port}`);
+});
