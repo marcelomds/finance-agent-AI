@@ -158,6 +158,17 @@ docker compose down              # stop
 
 ---
 
+## ⚙️ CI/CD
+
+`.github/workflows/ci.yml` runs on every push/PR to `main`, 3 jobs:
+- **backend** — `npm ci` → `prisma generate` → `npm run build` (tsc)
+- **frontend** — `npm ci` → `npm run lint` (oxlint) → `npm run build` (tsc + vite)
+- **docker** — builds the backend image from `docker/node/Dockerfile` (no push yet)
+
+No deploy step configured yet — added as the project grows.
+
+---
+
 ## 🗺️ Roadmap (not implemented yet)
 
 - Express.js REST API (`/api/expenses`, `/api/dashboard`, `/api/admin`)
