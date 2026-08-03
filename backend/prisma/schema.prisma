@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  passwordHash String?
+  expenses  Expense[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Expense {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  fileName            String
+  s3Key               String
+  originalFileUrl     String?
+  
+  // Status: processing, extracted, classified, validated, approved, rejected, escalated
+  status              String   @default("processing")
+  
+  // Extracted Data
+  extractedData       Json?    // { vendor, amount, currency, date, description, confidence }
+  
+  // Classification
+  category            String?  // travel_accommodation, travel_flights, etc
+  categoryConfidence  Float?
+  
+  // Validation
+  validationIssues    String[]
+  validationPassed    Boolean?
+  
+  // Reconciliation
+  matchedBankTxnId    String?
+  reconciled          Boolean? @default(false)
+  
+  // Approval/Rejection
+  approvedAt          DateTime?
+  approvedBy          String?
+  rejectionReason     String?
+  
+  // Escalation
+  escalatedAt         DateTime?
+  escalationReason    String?
+  escalationStatus    String?  // pending, approved_by_human, rejected_by_human
+  
+  // Timestamps
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model BankTransaction {
+  id            String   @id @default(cuid())
+  userId        String
+  
+  amount        Float
+  currency      String   @default("EUR")
+  date          DateTime
+  description   String
+  transactionId String?
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([userId])
+  @@index([date])
+  @@index([amount])
+}
+
+model ProcessingLog {
+  id          String   @id @default(cuid())
+  expenseId   String
+  
+  step        String   // vision_extract, classification, validation, reconciliation, approval
+  status      String   // success, failed
+  message     String?
+  error       String?
+  
+  duration    Int?     // milliseconds
+  tokensUsed  Int?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([expenseId])
+  @@index([step])
+}
