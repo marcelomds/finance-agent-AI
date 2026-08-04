@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { createExpense, getExpenseById, listExpenses } from '../../services/expenseService';
-import { classifyExpensePipeline } from '../../services/expensePipeline';
+import { hasActiveCategories } from '../../services/categoryService';
+import { processExpense } from '../../services/expensePipeline';
+import { expenseQueue } from '../../services/queue/expenseQueue';
 import { uploadToS3 } from '../../services/storage/uploadFile';
 import { getSignedFileUrl } from '../../services/storage/getFileUrl';
 import { ValidationError } from '../errors/AppError';
@@ -39,10 +41,8 @@ export async function processExpenseController(req: Request, res: Response): Pro
   }
 
   const id = String(req.params.id);
-  const description = typeof req.body?.description === 'string' ? req.body.description : undefined;
-
-  const expense = await classifyExpensePipeline(organizationId, id, description);
-  sendSuccessResponse(res, expense, 'Expense classified');
+  const expense = await processExpense(organizationId, id);
+  sendSuccessResponse(res, expense, 'Expense processed');
 }
 
 export async function uploadExpenseController(req: Request, res: Response): Promise<void> {
@@ -55,6 +55,13 @@ export async function uploadExpenseController(req: Request, res: Response): Prom
 
   if (!req.file) {
     throw new ValidationError('File is required', ['file']);
+  }
+
+  if (!(await hasActiveCategories(organizationId))) {
+    throw new ValidationError(
+      'Create at least one category before uploading expenses',
+      ['categories'],
+    );
   }
 
   const s3Key = await uploadToS3({
@@ -71,6 +78,8 @@ export async function uploadExpenseController(req: Request, res: Response): Prom
     fileName: req.file.originalname,
     s3Key,
   });
+
+  await expenseQueue.add({ organizationId, expenseId: expense.id });
 
   sendSuccessResponse(res, expense, 'Expense uploaded', 201);
 }

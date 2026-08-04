@@ -28,3 +28,9 @@ export class ClassificationError extends AppError {
     super(message, 502);
   }
 }
+
+export class VisionExtractionError extends AppError {
+  constructor(message = 'Failed to extract receipt data') {
+    super(message, 502);
+  }
+}

@@ -4,6 +4,7 @@ import cors from 'cors';
 import { healthRouter } from './api/routes/health';
 import { expenseRouter } from './api/routes/expenses';
 import { categoryRouter } from './api/routes/categories';
+import { queueDashboardRouter } from './api/routes/queueDashboard';
 import { errorHandler } from './api/middleware/errorHandler';
 
 // Create an Express application
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use(healthRouter);
 app.use(expenseRouter);
 app.use(categoryRouter);
+app.use('/admin/queues', queueDashboardRouter);
 
 // Must be registered last: catches errors thrown by any route above
 app.use(errorHandler);

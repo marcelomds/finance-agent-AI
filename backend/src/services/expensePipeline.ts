@@ -1,12 +1,63 @@
 import { prisma } from '../db/prisma';
 import { classifyExpense } from './ai/classificationAgent';
+import { extractReceiptData } from './ai/visionAgent';
+import { getFileBuffer } from './storage/getFileBuffer';
 import { NotFoundError, ClassificationError } from '../api/errors/AppError';
 
-export async function classifyExpensePipeline(
-  organizationId: string,
+async function withProcessingLog<T>(
   expenseId: string,
-  descriptionOverride?: string,
-) {
+  step: string,
+  fn: () => Promise<{ result: T; tokensUsed?: number }>,
+): Promise<T> {
+  const start = Date.now();
+  try {
+    const { result, tokensUsed } = await fn();
+    await prisma.processingLog.create({
+      data: { expenseId, step, status: 'success', duration: Date.now() - start, tokensUsed },
+    });
+    return result;
+  } catch (err) {
+    await prisma.processingLog.create({
+      data: {
+        expenseId,
+        step,
+        status: 'failed',
+        error: err instanceof Error ? err.message : 'Unknown error',
+        duration: Date.now() - start,
+      },
+    });
+    throw err;
+  }
+}
+
+export async function extractExpenseDataPipeline(organizationId: string, expenseId: string) {
+  const expense = await prisma.expense.findFirst({ where: { id: expenseId, organizationId } });
+  if (!expense) throw new NotFoundError('Expense not found');
+
+  return withProcessingLog(expense.id, 'vision_extract', async () => {
+    const file = await getFileBuffer(expense.s3Key);
+    const extracted = await extractReceiptData(file.buffer, file.mimeType);
+
+    const updated = await prisma.expense.update({
+      where: { id: expense.id },
+      data: {
+        extractedData: {
+          vendor: extracted.vendor,
+          amount: extracted.amount,
+          currency: extracted.currency,
+          date: extracted.date,
+          description: extracted.description,
+          confidence: extracted.confidence,
+        },
+        status: 'extracted',
+      },
+    });
+
+    return { result: updated, tokensUsed: extracted.tokensUsed };
+  });
+}
+
+export async function classifyExpensePipeline(organizationId: string, expenseId: string) {
   const expense = await prisma.expense.findFirst({ where: { id: expenseId, organizationId } });
   if (!expense) throw new NotFoundError('Expense not found');
 
@@ -14,11 +65,19 @@ export async function classifyExpensePipeline(
     where: { organizationId, isActive: true },
   });
 
-  const start = Date.now();
+  const extractedData = expense.extractedData as {
+    vendor: string | null;
+    description: string;
+    amount: number | null;
+  } | null;
 
-  try {
+  return withProcessingLog(expense.id, 'classification', async () => {
     const result = await classifyExpense(
-      { description: descriptionOverride ?? expense.fileName },
+      {
+        vendor: extractedData?.vendor ?? undefined,
+        description: extractedData?.description ?? expense.fileName,
+        amount: extractedData?.amount ?? undefined,
+      },
       categories.map((c) => ({ slug: c.slug, name: c.name })),
     );
 
@@ -37,27 +96,11 @@ export async function classifyExpensePipeline(
       include: { category: true },
     });
 
-    await prisma.processingLog.create({
-      data: {
-        expenseId: expense.id,
-        step: 'classification',
-        status: 'success',
-        duration: Date.now() - start,
-        tokensUsed: result.tokensUsed,
-      },
-    });
+    return { result: updated, tokensUsed: result.tokensUsed };
+  });
+}
 
-    return updated;
-  } catch (err) {
-    await prisma.processingLog.create({
-      data: {
-        expenseId: expense.id,
-        step: 'classification',
-        status: 'failed',
-        error: err instanceof Error ? err.message : 'Unknown error',
-        duration: Date.now() - start,
-      },
-    });
-    throw err;
-  }
+export async function processExpense(organizationId: string, expenseId: string) {
+  await extractExpenseDataPipeline(organizationId, expenseId);
+  return classifyExpensePipeline(organizationId, expenseId);
 }

@@ -14,6 +14,11 @@ export function listCategories(organizationId: string) {
   });
 }
 
+export async function hasActiveCategories(organizationId: string): Promise<boolean> {
+  const count = await prisma.category.count({ where: { organizationId, isActive: true } });
+  return count > 0;
+}
+
 export async function createCategory(organizationId: string, input: CategoryInput) {
   try {
     return await prisma.category.create({ data: { ...input, organizationId } });
