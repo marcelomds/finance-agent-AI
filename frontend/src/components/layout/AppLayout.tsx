@@ -3,7 +3,7 @@ import { Sidebar } from './Sidebar';
 
 export function AppLayout() {
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex min-h-screen" style={{ background: 'var(--surface-page)' }}>
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
         <Outlet />

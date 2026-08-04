@@ -1,10 +1,28 @@
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
-export function Card({ title, children }: { title?: string; children: ReactNode }) {
+type CardProps = {
+  title?: string;
+  icon?: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+  children: ReactNode;
+};
+
+export function Card({ title, icon: Icon, children }: CardProps) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div
+      className="rounded-xl p-5 shadow-sm"
+      style={{
+        background: 'var(--surface-1)',
+        border: '1px solid var(--hairline)',
+      }}
+    >
       {title && (
-        <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{title}</h2>
+        <h2
+          className="mb-4 flex items-center gap-2 text-sm font-semibold"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {Icon && <Icon size={15} strokeWidth={2.25} />}
+          {title}
+        </h2>
       )}
       {children}
     </div>

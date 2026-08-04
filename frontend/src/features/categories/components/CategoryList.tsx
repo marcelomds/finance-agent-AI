@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Pencil, Trash2, Check, X, Tag } from 'lucide-react';
 import type { Category } from '../types/category';
 import {
   useDeleteCategory,
@@ -28,9 +29,7 @@ function Row({ category }: { category: Category }) {
 
   return (
     <tr
-      className={`border-b border-gray-100 last:border-0 dark:border-gray-800 ${
-        category.isActive ? '' : 'opacity-50'
-      }`}
+      style={{ borderBottom: '1px solid var(--hairline)', opacity: category.isActive ? 1 : 0.5 }}
     >
       <td className="px-4 py-3">
         {editing ? (
@@ -39,36 +38,43 @@ function Row({ category }: { category: Category }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && save()}
-            className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-900"
+            className="w-full rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            style={{ border: '1px solid var(--hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
           />
         ) : (
-          <span className="text-gray-900 dark:text-gray-100">{category.name}</span>
+          <div className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <Tag size={14} strokeWidth={2} style={{ color: 'var(--text-muted)' }} />
+            {category.name}
+          </div>
         )}
       </td>
-      <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">
+      <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
         {category.slug}
       </td>
       <td className="px-4 py-3">
         <button
           onClick={() => setActive.mutate({ id: category.id, isActive: !category.isActive })}
           disabled={setActive.isPending}
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-            category.isActive
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-          }`}
+          className="rounded-full px-2 py-0.5 text-xs font-medium"
+          style={{
+            background: category.isActive
+              ? 'color-mix(in srgb, var(--status-good) 15%, transparent)'
+              : 'var(--surface-2)',
+            color: category.isActive ? 'var(--status-good)' : 'var(--text-muted)',
+          }}
         >
           {category.isActive ? t('common.active') : t('common.inactive')}
         </button>
       </td>
       <td className="px-4 py-3 text-right">
         {editing ? (
-          <div className="inline-flex gap-2">
+          <div className="inline-flex gap-3">
             <button
               onClick={save}
               disabled={update.isPending}
-              className="text-xs font-medium text-purple-600 hover:text-purple-800"
+              className="inline-flex items-center gap-1 text-xs font-medium text-[var(--accent)] hover:text-[var(--accent-hover)]"
             >
+              <Check size={14} strokeWidth={2.5} />
               {t('common.save')}
             </button>
             <button
@@ -76,8 +82,10 @@ function Row({ category }: { category: Category }) {
                 setName(category.name);
                 setEditing(false);
               }}
-              className="text-xs font-medium text-gray-500 hover:text-gray-700"
+              className="inline-flex items-center gap-1 text-xs font-medium"
+              style={{ color: 'var(--text-muted)' }}
             >
+              <X size={14} strokeWidth={2.5} />
               {t('common.cancel')}
             </button>
           </div>
@@ -85,15 +93,19 @@ function Row({ category }: { category: Category }) {
           <div className="inline-flex gap-3">
             <button
               onClick={() => setEditing(true)}
-              className="text-xs font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+              className="inline-flex items-center gap-1 text-xs font-medium hover:opacity-80"
+              style={{ color: 'var(--text-secondary)' }}
             >
+              <Pencil size={13} strokeWidth={2} />
               {t('common.edit')}
             </button>
             <button
               onClick={() => remove.mutate(category.id)}
               disabled={remove.isPending}
-              className="text-xs font-medium text-red-500 hover:text-red-700"
+              className="inline-flex items-center gap-1 text-xs font-medium hover:opacity-80"
+              style={{ color: 'var(--status-critical)' }}
             >
+              <Trash2 size={13} strokeWidth={2} />
               {t('common.delete')}
             </button>
           </div>
@@ -108,20 +120,29 @@ export function CategoryList({ categories }: { categories: Category[] }) {
 
   if (categories.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 py-10 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+      <div
+        className="rounded-xl border border-dashed py-10 text-center text-sm"
+        style={{ borderColor: 'var(--hairline)', color: 'var(--text-muted)' }}
+      >
         {t('categories.noCategories')}
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+    <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid var(--hairline)' }}>
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="border-b border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900/50 dark:text-gray-400">
-            <th className="px-4 py-3 font-medium">{t('categories.columns.name')}</th>
-            <th className="px-4 py-3 font-medium">{t('categories.columns.slug')}</th>
-            <th className="px-4 py-3 font-medium">{t('categories.columns.status')}</th>
+          <tr style={{ borderBottom: '1px solid var(--hairline)', background: 'var(--surface-2)' }}>
+            <th className="px-4 py-3 font-medium" style={{ color: 'var(--text-muted)' }}>
+              {t('categories.columns.name')}
+            </th>
+            <th className="px-4 py-3 font-medium" style={{ color: 'var(--text-muted)' }}>
+              {t('categories.columns.slug')}
+            </th>
+            <th className="px-4 py-3 font-medium" style={{ color: 'var(--text-muted)' }}>
+              {t('categories.columns.status')}
+            </th>
             <th className="px-4 py-3"></th>
           </tr>
         </thead>

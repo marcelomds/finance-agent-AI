@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Plus, Loader2 } from 'lucide-react';
 import { useCreateCategory } from '../hooks/useCategoryMutations';
 
 function slugify(name: string): string {
@@ -31,16 +32,22 @@ export function CategoryForm() {
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder={t('categories.namePlaceholder')}
-        className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+        className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        style={{ border: '1px solid var(--hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
       />
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
       >
+        {isPending ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
         {isPending ? t('common.adding') : t('categories.addCategory')}
       </button>
-      {error && <span className="self-center text-sm text-red-600">{error.message}</span>}
+      {error && (
+        <span className="self-center text-sm" style={{ color: 'var(--status-critical)' }}>
+          {error.message}
+        </span>
+      )}
     </form>
   );
 }

@@ -13,18 +13,20 @@ export function ExpensesPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
           {t('expenses.title')}
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t('expenses.subtitle')}</p>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          {t('expenses.subtitle')}
+        </p>
       </div>
 
       <Card>
         <ExpenseForm />
       </Card>
 
-      {isLoading && <p className="text-sm text-gray-500">{t('common.loading')}</p>}
-      {error && <p className="text-sm text-red-600">{error.message}</p>}
+      {isLoading && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('common.loading')}</p>}
+      {error && <p className="text-sm" style={{ color: 'var(--status-critical)' }}>{error.message}</p>}
       {expenses && <ExpenseList expenses={expenses} />}
     </div>
   );

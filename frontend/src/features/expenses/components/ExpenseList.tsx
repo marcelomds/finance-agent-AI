@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Eye, Loader2, CheckCircle2, XCircle, AlertTriangle, FileText } from 'lucide-react';
 import { useOrganization } from '../../../contexts/OrganizationContext';
 import { formatDateTime } from '../../../utils/formatDate';
 import { fetchExpenseFileUrl } from '../services/expenseService';
 import type { Expense } from '../types/expense';
 
-const statusStyle: Record<string, string> = {
-  processing: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-  approved: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-  rejected: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-  escalated: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+const STATUS_META: Record<string, { icon: typeof Loader2; color: string; spin?: boolean }> = {
+  processing: { icon: Loader2, color: 'var(--text-muted)', spin: true },
+  extracted: { icon: Loader2, color: 'var(--text-muted)', spin: true },
+  classified: { icon: Loader2, color: 'var(--text-muted)', spin: true },
+  validated: { icon: Loader2, color: 'var(--text-muted)', spin: true },
+  approved: { icon: CheckCircle2, color: 'var(--status-good)' },
+  rejected: { icon: XCircle, color: 'var(--status-critical)' },
+  escalated: { icon: AlertTriangle, color: 'var(--status-serious)' },
 };
 
 function formatAmount(amount: number | null | undefined, currency: string | null | undefined, locale: string) {
@@ -41,22 +45,35 @@ export function ExpenseList({ expenses }: { expenses: Expense[] }) {
 
   if (expenses.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 py-10 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+      <div
+        className="rounded-xl border border-dashed py-10 text-center text-sm"
+        style={{ borderColor: 'var(--hairline)', color: 'var(--text-muted)' }}
+      >
         {t('expenses.noExpenses')}
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+    <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid var(--hairline)' }}>
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="border-b border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900/50 dark:text-gray-400">
-            <th className="px-4 py-3 font-medium">{t('expenses.columns.file')}</th>
-            <th className="px-4 py-3 font-medium">{t('expenses.columns.status')}</th>
-            <th className="px-4 py-3 font-medium">{t('expenses.columns.amount')}</th>
-            <th className="px-4 py-3 font-medium">{t('expenses.columns.category')}</th>
-            <th className="px-4 py-3 font-medium">{t('expenses.columns.created')}</th>
+          <tr style={{ borderBottom: '1px solid var(--hairline)', background: 'var(--surface-2)' }}>
+            <th className="px-4 py-3 font-medium" style={{ color: 'var(--text-muted)' }}>
+              {t('expenses.columns.file')}
+            </th>
+            <th className="px-4 py-3 font-medium" style={{ color: 'var(--text-muted)' }}>
+              {t('expenses.columns.status')}
+            </th>
+            <th className="px-4 py-3 font-medium" style={{ color: 'var(--text-muted)' }}>
+              {t('expenses.columns.amount')}
+            </th>
+            <th className="px-4 py-3 font-medium" style={{ color: 'var(--text-muted)' }}>
+              {t('expenses.columns.category')}
+            </th>
+            <th className="px-4 py-3 font-medium" style={{ color: 'var(--text-muted)' }}>
+              {t('expenses.columns.created')}
+            </th>
             <th className="px-4 py-3"></th>
           </tr>
         </thead>
@@ -67,46 +84,45 @@ export function ExpenseList({ expenses }: { expenses: Expense[] }) {
               expense.extractedData?.currency,
               i18n.language,
             );
+            const meta = STATUS_META[expense.status] ?? STATUS_META.processing;
+            const StatusIcon = meta.icon;
 
             return (
-              <tr
-                key={expense.id}
-                className="border-b border-gray-100 last:border-0 dark:border-gray-800"
-              >
-                <td className="px-4 py-3 text-gray-900 dark:text-gray-100">{expense.fileName}</td>
+              <tr key={expense.id} style={{ borderBottom: '1px solid var(--hairline)' }}>
                 <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      statusStyle[expense.status] ??
-                      'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-                    }`}
-                  >
+                  <div className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                    <FileText size={15} strokeWidth={2} style={{ color: 'var(--text-muted)' }} />
+                    {expense.fileName}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: meta.color }}>
+                    <StatusIcon size={14} strokeWidth={2.25} className={meta.spin ? 'animate-spin' : undefined} />
                     {t(`expenses.status.${expense.status}`, expense.status)}
                   </span>
                 </td>
                 <td className="px-4 py-3">
                   {amount ? (
-                    <span className="text-gray-900 dark:text-gray-100">{amount}</span>
+                    <span style={{ color: 'var(--text-primary)' }}>{amount}</span>
                   ) : expense.extractedData ? (
-                    <span className="text-amber-600 dark:text-amber-400">
-                      {t('expenses.notRecognized')}
-                    </span>
+                    <span style={{ color: 'var(--status-warning)' }}>{t('expenses.notRecognized')}</span>
                   ) : (
-                    <span className="text-gray-500 dark:text-gray-500">—</span>
+                    <span style={{ color: 'var(--text-muted)' }}>—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
                   {expense.category?.name ?? '—'}
                 </td>
-                <td className="px-4 py-3 text-gray-500 dark:text-gray-500">
+                <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>
                   {formatDateTime(expense.createdAt, i18n.language)}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => handleView(expense.id)}
                     disabled={loadingId === expense.id}
-                    className="text-xs font-medium text-purple-600 hover:text-purple-800 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] disabled:opacity-50"
                   >
+                    <Eye size={14} strokeWidth={2.25} />
                     {t('expenses.viewFile')}
                   </button>
                 </td>

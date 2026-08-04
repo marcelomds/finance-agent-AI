@@ -21,7 +21,16 @@
     "processing": "Processing",
     "approved": "Approved",
     "categoriesCount": "Categories",
-    "recentExpenses": "Recent Expenses"
+    "recentExpenses": "Recent Expenses",
+    "byCategory": "Expenses by Category",
+    "byStatus": "Expenses by Status",
+    "noData": "No data yet",
+    "statusBuckets": {
+      "inProgress": "In progress",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "escalated": "Escalated"
+    }
   },
   "expenses": {
     "title": "Expenses",

@@ -21,7 +21,16 @@
     "processing": "Processando",
     "approved": "Aprovadas",
     "categoriesCount": "Categorias",
-    "recentExpenses": "Despesas Recentes"
+    "recentExpenses": "Despesas Recentes",
+    "byCategory": "Despesas por Categoria",
+    "byStatus": "Despesas por Status",
+    "noData": "Sem dados ainda",
+    "statusBuckets": {
+      "inProgress": "Em processamento",
+      "approved": "Aprovadas",
+      "rejected": "Rejeitadas",
+      "escalated": "Escaladas"
+    }
   },
   "expenses": {
     "title": "Despesas",
