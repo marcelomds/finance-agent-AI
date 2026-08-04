@@ -9,7 +9,8 @@
     "start": "tsx src/index.ts",
     "test": "jest",
     "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev"
+    "db:migrate": "prisma migrate dev",
+    "db:fresh": "prisma migrate reset --force && prisma db seed"
   },
   "keywords": [],
   "author": "",

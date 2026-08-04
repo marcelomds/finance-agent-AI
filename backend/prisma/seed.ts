@@ -4,6 +4,11 @@ import { PrismaPg } from '@prisma/adapter-pg';
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+// Fixed IDs (not random cuids) so `db:fresh` is reproducible — the frontend's
+// dev-only OrganizationContext hardcodes these until real auth exists.
+const DEV_ORGANIZATION_ID = 'org_dev_acme';
+const DEV_USER_ID = 'user_dev_test';
+
 const DEFAULT_CATEGORIES = [
   { name: 'Travel - Accommodation', slug: 'travel_accommodation' },
   { name: 'Travel - Flights', slug: 'travel_flights' },
@@ -19,13 +24,18 @@ async function main() {
   const org = await prisma.organization.upsert({
     where: { slug: 'acme' },
     update: {},
-    create: { name: 'Acme Inc', slug: 'acme' },
+    create: { id: DEV_ORGANIZATION_ID, name: 'Acme Inc', slug: 'acme' },
   });
 
   await prisma.user.upsert({
     where: { email: 'test@test.com' },
     update: {},
-    create: { email: 'test@test.com', name: 'Test User', organizationId: org.id },
+    create: {
+      id: DEV_USER_ID,
+      email: 'test@test.com',
+      name: 'Test User',
+      organizationId: org.id,
+    },
   });
 
   await prisma.category.createMany({

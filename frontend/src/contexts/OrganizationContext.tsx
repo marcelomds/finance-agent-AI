@@ -1,8 +1,9 @@
 import { createContext, useContext, type ReactNode } from 'react';
 
-// TODO: replace with real auth/session once login exists
-const CURRENT_ORGANIZATION_ID = 'cmsdjv6tv0000p6p9d4ebok37';
-const CURRENT_USER_ID = 'cmsdjv6ul0001p6p996rgsbjz';
+// TODO: replace with real auth/session once login exists.
+// These match the fixed dev IDs in backend/prisma/seed.ts — stable across `db:fresh`.
+const CURRENT_ORGANIZATION_ID = 'org_dev_acme';
+const CURRENT_USER_ID = 'user_dev_test';
 
 type OrganizationContextValue = {
   organizationId: string;
