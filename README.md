@@ -8,23 +8,28 @@ Developed at **ME2** | 2026
 
 ## 🎯 Overview
 
-FinanceAgent will automate expense processing using AI agents that extract receipt data via Claude Vision, classify expenses, validate entries, and reconcile with bank transactions.
+FinanceAgent automates expense processing: users upload a receipt (PDF/image), Claude Vision extracts the data, a second Claude call classifies it into the organization's own categories, and everything is tracked in a Bull/Redis queue you can watch in real time.
 
-**Status:** early stage — database schema and Docker environment are set up; API, agents and frontend are not implemented yet.
+**Status:** working end-to-end for upload → extraction → classification. Validation, bank reconciliation, and auth are not implemented yet.
 
 ---
 
 ## 🏗️ Tech Stack
 
-### Backend (in progress)
+### Backend
 - **Runtime**: Node.js 20 (Alpine, via Docker)
 - **Language**: TypeScript
-- **Database**: PostgreSQL + Prisma ORM 7 (`@prisma/adapter-pg` driver adapter)
-- **AI**: Claude API (`@anthropic-ai/sdk`)
-- **Planned**: Express.js API, Bull/Redis queue, AWS S3 storage
+- **Database**: PostgreSQL + Prisma ORM 7 (`@prisma/adapter-pg` driver adapter), multi-tenant (`Organization` as tenant root)
+- **AI**: Claude API (`@anthropic-ai/sdk`), model configurable via `CLAUDE_MODEL` env var (default: `claude-haiku-4-5`)
+- **Storage**: AWS S3 (`@aws-sdk/client-s3`), private bucket + signed URLs
+- **Queue**: Bull + Redis, dashboard via Bull Board
+- **Planned**: validation/reconciliation logic, JWT auth, rate limiting
 
 ### Frontend
-Not started yet.
+- **Framework**: React 19 + TypeScript + Vite
+- **Styling**: Tailwind v4
+- **Data fetching**: TanStack Query
+- **i18n**: i18next, default Portuguese, language switcher persisted in localStorage
 
 ---
 
@@ -47,26 +52,31 @@ cat .env
 # POSTGRES_PASSWORD=postgres
 # POSTGRES_DB=finance_agent
 
-# backend/.env — used by the app itself (Prisma, AWS, Anthropic, etc)
+# backend/.env — used by the app itself
 # fill in AWS_*, ANTHROPIC_API_KEY as needed
 
 docker compose up -d --build
 
 # apply migrations (first run only, or after schema changes)
 docker exec finance_agent_app npx prisma migrate dev
+
+# seed default org/user/categories
+docker exec finance_agent_app npx prisma db seed
 ```
 
-**App runs on:** `http://localhost:3000`
-**Postgres runs on:** `localhost:5432`
+**API runs on:** `http://localhost:3000`
+**Queue dashboard:** `http://localhost:3000/admin/queues`
+**Postgres:** `localhost:5432` · **Redis:** `localhost:6379`
 
-### Run locally without Docker
+### Run frontend
 
 ```bash
-cd backend
+cd frontend
 npm install
-npx prisma generate
 npm run dev
 ```
+
+Runs on `http://localhost:5173`.
 
 ---
 
@@ -74,25 +84,35 @@ npm run dev
 
 ```
 finance-agent/
-├── docker/
-│   └── node/
-│       └── Dockerfile
-├── docker-compose.yml
+├── docker/node/Dockerfile
+├── docker-compose.yml          # postgres, redis, app
 ├── .env                        # POSTGRES_* for docker-compose interpolation
 │
 ├── backend/
 │   ├── src/
-│   │   ├── config/
-│   │   │   └── env.ts
-│   │   ├── types.ts
-│   │   └── index.ts            # entry point (Prisma connectivity check)
-│   ├── prisma/
-│   │   ├── schema.prisma
-│   │   └── migrations/
-│   ├── prisma.config.ts
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── .env                    # app-level env (DATABASE_URL, AWS, Anthropic...)
+│   │   ├── api/
+│   │   │   ├── routes/          # health, expenses, categories, queueDashboard
+│   │   │   ├── controllers/
+│   │   │   ├── middleware/      # errorHandler, upload (multer)
+│   │   │   ├── errors/          # AppError + subclasses
+│   │   │   ├── types/, utils/   # ApiResponse envelope
+│   │   ├── services/
+│   │   │   ├── ai/              # claudeClient, visionAgent, classificationAgent
+│   │   │   ├── storage/         # s3Client, uploadFile, getFileBuffer, getFileUrl
+│   │   │   ├── queue/           # expenseQueue.ts, queues.ts (central registry)
+│   │   │   ├── expenseService.ts, categoryService.ts, expensePipeline.ts
+│   │   ├── db/prisma.ts
+│   │   └── index.ts
+│   ├── prisma/{schema.prisma,migrations/,seed.ts}
+│   └── .env                     # DATABASE_URL, AWS, Anthropic, CLAUDE_MODEL, REDIS_URL
+│
+├── frontend/
+│   └── src/
+│       ├── components/layout/   # Sidebar, AppLayout
+│       ├── contexts/            # OrganizationContext (tenant, no auth yet)
+│       ├── features/
+│       │   ├── dashboard/, expenses/, categories/
+│       └── i18n/locales/{pt,en}.json
 │
 └── README.md
 ```
@@ -101,15 +121,29 @@ finance-agent/
 
 ## 🗄️ Database Schema
 
+Multi-tenant: every model below belongs to an `Organization`.
+
+### Organization
+```
+id, name, slug, createdAt, updatedAt
+```
+
 ### User
 ```
-id, email, name, passwordHash, createdAt, updatedAt
+id, organizationId, email, name, passwordHash, createdAt, updatedAt
 ```
+
+### Category
+```
+id, organizationId, name, slug, isActive, createdAt, updatedAt
+```
+Per-tenant. Claude can only classify into a category that already exists — it never invents one.
 
 ### Expense
 ```
-id, userId, fileName, s3Key, status
-extractedData (JSON), category, categoryConfidence
+id, organizationId, userId, fileName, s3Key, status
+extractedData (JSON: vendor/amount/currency/date/description/confidence)
+categoryId, categoryConfidence
 validationIssues, validationPassed
 matchedBankTxnId, reconciled
 approvedAt, approvedBy, rejectionReason
@@ -119,14 +153,47 @@ createdAt, updatedAt
 
 ### BankTransaction
 ```
-id, userId, amount, currency, date, description, transactionId, createdAt
+id, organizationId, userId, amount, currency, date, description, transactionId, createdAt
 ```
 
 ### ProcessingLog
 ```
-id, expenseId, step, status, message, error
-duration (ms), tokensUsed, createdAt
+id, expenseId, step, status, message, error, duration (ms), tokensUsed, createdAt
 ```
+One row per pipeline step (`vision_extract`, `classification`, ...) — the audit trail for what the AI did and how much it cost.
+
+---
+
+## 🤖 AI Pipeline
+
+```
+Upload (PDF/JPG/PNG, ≤10MB)
+  → S3 (private bucket, signed URLs for viewing)
+  → Expense created (status: processing)
+  → enqueued on the expense-processing queue
+      → visionAgent: Claude extracts vendor/amount/date/description (status: extracted)
+      → classificationAgent: Claude picks one of the org's own categories (status: classified)
+```
+
+Each step logs to `ProcessingLog` (success/failure, duration, tokens used) regardless of outcome. Upload is rejected upfront (422) if the organization has no active categories yet — avoids paying for S3 + Vision on something that can't be classified.
+
+Model is swappable anytime via `CLAUDE_MODEL` in `backend/.env` (no code change, just restart) — cheapest to most capable: `claude-haiku-4-5`, `claude-sonnet-5`, `claude-opus-5`, `claude-fable-5`.
+
+Manual re-trigger for testing: `POST /api/expenses/:id/process?organizationId=...` (runs synchronously, outside the queue).
+
+---
+
+## 🔄 Queue & Background Jobs
+
+Background processing runs on **Bull + Redis**, not inline in the request — an upload responds immediately and the AI pipeline runs as a queued job (3 retries, exponential backoff on failure).
+
+**Dashboard:** `http://localhost:3000/admin/queues` (Bull Board — shows waiting/active/completed/failed jobs per queue, retry/inspect from the UI).
+
+Queues are centrally registered in `backend/src/services/queue/queues.ts` — adding a new queue later (e.g. bank reconciliation, notifications) means creating its file next to `expenseQueue.ts` and adding it to that one array; the dashboard picks it up automatically.
+
+| Queue | Purpose |
+|---|---|
+| `expense-processing` | vision extraction → classification for uploaded expenses |
 
 ---
 
@@ -142,12 +209,21 @@ npm run db:push      # prisma db push
 npx prisma studio    # Prisma GUI
 ```
 
+```bash
+cd frontend
+
+npm run dev          # vite
+npm run build         # tsc -b && vite build
+npm run lint          # oxlint
+```
+
 ---
 
 ## 🐳 Docker
 
-`docker-compose.yml` (repo root) runs two services:
+`docker-compose.yml` (repo root) runs three services:
 - `postgres` — Postgres 15, container `finance_agent_db`, named volume `pgdata`
+- `redis` — Redis 7, container `finance_agent_redis`, named volume `redisdata`
 - `app` — builds `docker/node/Dockerfile` with build context `backend/`, container `finance_agent_app`, bind-mounts `backend/` into `/app`
 
 ```bash
@@ -171,12 +247,10 @@ No deploy step configured yet — added as the project grows.
 
 ## 🗺️ Roadmap (not implemented yet)
 
-- Express.js REST API (`/api/expenses`, `/api/dashboard`, `/api/admin`)
-- Multi-agent pipeline: vision extraction → classification → validation → bank reconciliation
-- Bull/Redis job queue
-- AWS S3 receipt storage
-- JWT auth, rate limiting
-- React + Vite frontend with real-time dashboard
+- Validation agent (deterministic: date sanity, duplicate detection) — no LLM needed
+- Bank reconciliation (deterministic matching against `BankTransaction`) — no LLM needed
+- Auth (JWT) — frontend currently uses a hardcoded tenant/user, no login
+- Approval/escalation workflow + Slack notifications
 - Tests
 
 ---
