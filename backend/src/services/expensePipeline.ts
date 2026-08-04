@@ -4,6 +4,9 @@ import { extractReceiptData } from './ai/visionAgent';
 import { getFileBuffer } from './storage/getFileBuffer';
 import { NotFoundError, ClassificationError } from '../api/errors/AppError';
 
+// Classifications below this confidence are routed to a human instead of auto-approved.
+const AUTO_APPROVE_CONFIDENCE_THRESHOLD = 0.7;
+
 async function withProcessingLog<T>(
   expenseId: string,
   step: string,
@@ -91,7 +94,7 @@ export async function classifyExpensePipeline(organizationId: string, expenseId:
       data: {
         categoryId: category.id,
         categoryConfidence: result.confidence,
-        status: 'classified',
+        status: result.confidence >= AUTO_APPROVE_CONFIDENCE_THRESHOLD ? 'approved' : 'escalated',
       },
       include: { category: true },
     });

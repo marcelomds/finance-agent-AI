@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganization } from '../../../contexts/OrganizationContext';
 import {
   createCategory,
   deleteCategory,
@@ -9,51 +8,47 @@ import {
 import type { CategoryInput } from '../types/category';
 
 export function useCreateCategory() {
-  const { organizationId } = useOrganization();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: CategoryInput) => createCategory(organizationId, input),
+    mutationFn: (input: CategoryInput) => createCategory(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories', organizationId] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
   });
 }
 
 export function useUpdateCategory() {
-  const { organizationId } = useOrganization();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<CategoryInput> }) =>
-      updateCategory(organizationId, id, input),
+      updateCategory(id, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories', organizationId] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
   });
 }
 
 export function useDeleteCategory() {
-  const { organizationId } = useOrganization();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteCategory(organizationId, id),
+    mutationFn: (id: string) => deleteCategory(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories', organizationId] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
   });
 }
 
 export function useSetCategoryActive() {
-  const { organizationId } = useOrganization();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      setCategoryActive(organizationId, id, isActive),
+      setCategoryActive(id, isActive),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories', organizationId] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
   });
 }

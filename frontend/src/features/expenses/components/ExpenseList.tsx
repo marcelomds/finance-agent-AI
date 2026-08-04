@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Eye, Loader2, CheckCircle2, XCircle, AlertTriangle, FileText } from 'lucide-react';
-import { useOrganization } from '../../../contexts/OrganizationContext';
 import { formatDateTime } from '../../../utils/formatDate';
 import { fetchExpenseFileUrl } from '../services/expenseService';
 import type { Expense } from '../types/expense';
@@ -30,13 +29,12 @@ function formatAmount(amount: number | null | undefined, currency: string | null
 
 export function ExpenseList({ expenses }: { expenses: Expense[] }) {
   const { t, i18n } = useTranslation();
-  const { organizationId } = useOrganization();
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   async function handleView(expenseId: string) {
     setLoadingId(expenseId);
     try {
-      const url = await fetchExpenseFileUrl(organizationId, expenseId);
+      const url = await fetchExpenseFileUrl(expenseId);
       window.open(url, '_blank', 'noopener,noreferrer');
     } finally {
       setLoadingId(null);

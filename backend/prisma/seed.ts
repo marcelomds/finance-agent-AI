@@ -1,13 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import bcrypt from 'bcryptjs';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-// Fixed IDs (not random cuids) so `db:fresh` is reproducible — the frontend's
-// dev-only OrganizationContext hardcodes these until real auth exists.
+// Fixed IDs (not random cuids) so `db:fresh` is reproducible.
 const DEV_ORGANIZATION_ID = 'org_dev_acme';
 const DEV_USER_ID = 'user_dev_test';
+const DEV_PASSWORD = 'password123';
 
 const DEFAULT_CATEGORIES = [
   { name: 'Travel - Accommodation', slug: 'travel_accommodation' },
@@ -27,14 +28,17 @@ async function main() {
     create: { id: DEV_ORGANIZATION_ID, name: 'Acme Inc', slug: 'acme' },
   });
 
+  const passwordHash = bcrypt.hashSync(DEV_PASSWORD, 10);
+
   await prisma.user.upsert({
     where: { email: 'test@test.com' },
-    update: {},
+    update: { passwordHash },
     create: {
       id: DEV_USER_ID,
       email: 'test@test.com',
       name: 'Test User',
       organizationId: org.id,
+      passwordHash,
     },
   });
 
@@ -44,6 +48,7 @@ async function main() {
   });
 
   console.log(`Seeded organization "${org.name}" (${org.id})`);
+  console.log(`Login with test@test.com / ${DEV_PASSWORD}`);
 }
 
 main()

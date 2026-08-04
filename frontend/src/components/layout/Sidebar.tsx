@@ -1,10 +1,12 @@
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, Receipt, Tags, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Receipt, Tags, Sparkles, LogOut } from 'lucide-react';
 import { LanguageSwitcher } from '../LanguageSwitcher';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function Sidebar() {
   const { t } = useTranslation();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { to: '/', label: t('nav.dashboard'), end: true, icon: LayoutDashboard },
@@ -63,10 +65,21 @@ export function Sidebar() {
         className="space-y-3 px-5 py-4"
         style={{ borderTop: '1px solid var(--hairline)' }}
       >
-        <LanguageSwitcher />
-        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Acme Inc
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate text-xs" style={{ color: 'var(--text-muted)' }}>
+            {user?.email}
+          </span>
+          <button
+            type="button"
+            onClick={logout}
+            title={t('auth.logout')}
+            className="shrink-0 rounded-md p-1.5 hover:bg-black/5 dark:hover:bg-white/5"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <LogOut size={15} strokeWidth={2} />
+          </button>
         </div>
+        <LanguageSwitcher />
       </div>
     </aside>
   );

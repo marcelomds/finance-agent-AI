@@ -8,22 +8,16 @@ import {
 } from '../../services/categoryService';
 import { ValidationError } from '../errors/AppError';
 import { sendSuccessResponse } from '../utils/apiResponse';
-
-function requireOrganizationId(value: unknown): string {
-  if (typeof value !== 'string' || value.length === 0) {
-    throw new ValidationError('organizationId is required', ['organizationId']);
-  }
-  return value;
-}
+import { getAuthUser } from '../utils/authContext';
 
 export async function listCategoriesController(req: Request, res: Response): Promise<void> {
-  const organizationId = requireOrganizationId(req.query.organizationId);
+  const { organizationId } = getAuthUser(req);
   const categories = await listCategories(organizationId);
   sendSuccessResponse(res, categories);
 }
 
 export async function createCategoryController(req: Request, res: Response): Promise<void> {
-  const organizationId = requireOrganizationId(req.body?.organizationId);
+  const { organizationId } = getAuthUser(req);
   const { name, slug } = req.body ?? {};
 
   const missing = ['name', 'slug'].filter((field) => !req.body?.[field]);
@@ -36,7 +30,7 @@ export async function createCategoryController(req: Request, res: Response): Pro
 }
 
 export async function updateCategoryController(req: Request, res: Response): Promise<void> {
-  const organizationId = requireOrganizationId(req.query.organizationId);
+  const { organizationId } = getAuthUser(req);
   const { name, slug } = req.body ?? {};
 
   if (!name && !slug) {
@@ -49,14 +43,14 @@ export async function updateCategoryController(req: Request, res: Response): Pro
 }
 
 export async function deleteCategoryController(req: Request, res: Response): Promise<void> {
-  const organizationId = requireOrganizationId(req.query.organizationId);
+  const { organizationId } = getAuthUser(req);
   const id = String(req.params.id);
   await deleteCategory(organizationId, id);
   sendSuccessResponse(res, null, 'Category deleted');
 }
 
 export async function updateCategoryActiveStatusController(req: Request, res: Response): Promise<void> {
-  const organizationId = requireOrganizationId(req.query.organizationId);
+  const { organizationId } = getAuthUser(req);
   const { isActive } = req.body ?? {};
 
   if (typeof isActive !== 'boolean') {

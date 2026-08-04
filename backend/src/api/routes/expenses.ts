@@ -7,8 +7,11 @@ import {
   uploadExpenseController,
 } from '../controllers/expenseController';
 import { uploadReceipt } from '../middleware/upload';
+import { requireAuth } from '../middleware/requireAuth';
 
 export const expenseRouter = Router();
+
+expenseRouter.use(requireAuth);
 
 expenseRouter.get('/api/expenses', listExpensesController);
 expenseRouter.post('/api/expenses', createExpenseController);

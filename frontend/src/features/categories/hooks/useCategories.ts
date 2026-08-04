@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCategories } from '../services/categoryService';
 
-export function useCategories(organizationId: string) {
+export function useCategories() {
   return useQuery({
-    queryKey: ['categories', organizationId],
-    queryFn: () => fetchCategories(organizationId),
-    enabled: Boolean(organizationId),
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
   });
 }

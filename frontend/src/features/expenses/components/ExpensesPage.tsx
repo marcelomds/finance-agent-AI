@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { useOrganization } from '../../../contexts/OrganizationContext';
 import { Card } from '../../../components/Card';
 import { useExpenses } from '../hooks/useExpenses';
 import { ExpenseForm } from './ExpenseForm';
@@ -7,8 +6,7 @@ import { ExpenseList } from './ExpenseList';
 
 export function ExpensesPage() {
   const { t } = useTranslation();
-  const { organizationId } = useOrganization();
-  const { data: expenses, isLoading, error } = useExpenses(organizationId);
+  const { data: expenses, isLoading, error } = useExpenses();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">

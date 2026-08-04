@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import { Receipt, Loader2, CheckCircle2, Tags, PieChart, BarChart3, Clock } from 'lucide-react';
-import { useOrganization } from '../../../contexts/OrganizationContext';
 import { StatCard } from '../../../components/StatCard';
 import { Card } from '../../../components/Card';
 import { BreakdownBar, type BreakdownItem } from '../../../components/charts/BreakdownBar';
@@ -23,9 +22,8 @@ const IN_PROGRESS_STATUSES = ['processing', 'extracted', 'classified', 'validate
 
 export function DashboardPage() {
   const { t } = useTranslation();
-  const { organizationId } = useOrganization();
-  const { data: expenses, isLoading } = useExpenses(organizationId);
-  const { data: categories } = useCategories(organizationId);
+  const { data: expenses, isLoading } = useExpenses();
+  const { data: categories } = useCategories();
 
   const total = expenses?.length ?? 0;
   const processing = expenses?.filter((e) => IN_PROGRESS_STATUSES.includes(e.status)).length ?? 0;

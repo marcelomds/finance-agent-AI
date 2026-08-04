@@ -23,6 +23,12 @@ export class ConflictError extends AppError {
   }
 }
 
+export class UnauthorizedError extends AppError {
+  constructor(message = 'Unauthorized') {
+    super(message, 401);
+  }
+}
+
 export class ClassificationError extends AppError {
   constructor(message = 'Failed to classify expense') {
     super(message, 502);

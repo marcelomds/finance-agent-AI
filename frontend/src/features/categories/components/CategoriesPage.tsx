@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { useOrganization } from '../../../contexts/OrganizationContext';
 import { Card } from '../../../components/Card';
 import { useCategories } from '../hooks/useCategories';
 import { CategoryForm } from './CategoryForm';
@@ -7,8 +6,7 @@ import { CategoryList } from './CategoryList';
 
 export function CategoriesPage() {
   const { t } = useTranslation();
-  const { organizationId } = useOrganization();
-  const { data: categories, isLoading, error } = useCategories(organizationId);
+  const { data: categories, isLoading, error } = useCategories();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">

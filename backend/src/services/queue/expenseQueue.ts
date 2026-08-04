@@ -1,4 +1,5 @@
 import Queue from 'bull';
+import { prisma } from '../../db/prisma';
 import { processExpense } from '../expensePipeline';
 
 export type ExpenseJobData = {
@@ -19,6 +20,14 @@ expenseQueue.process(async (job) => {
   await processExpense(job.data.organizationId, job.data.expenseId);
 });
 
-expenseQueue.on('failed', (job, err) => {
+expenseQueue.on('failed', async (job, err) => {
   console.error(`Expense job failed (expense ${job.data.expenseId}, attempt ${job.attemptsMade}):`, err.message);
+
+  const retriesExhausted = job.attemptsMade >= (job.opts.attempts ?? 1);
+  if (!retriesExhausted) return;
+
+  await prisma.expense.updateMany({
+    where: { id: job.data.expenseId, organizationId: job.data.organizationId },
+    data: { status: 'escalated' },
+  });
 });

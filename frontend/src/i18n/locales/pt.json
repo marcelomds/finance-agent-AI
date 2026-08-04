@@ -49,6 +49,8 @@
     },
     "status": {
       "processing": "processando",
+      "extracted": "extraído",
+      "classified": "classificando",
       "approved": "aprovado",
       "rejected": "rejeitado",
       "escalated": "escalado"
@@ -68,5 +70,19 @@
   },
   "language": {
     "label": "Idioma"
+  },
+  "auth": {
+    "title": "Finance Agent",
+    "email": "E-mail",
+    "password": "Senha",
+    "name": "Nome completo",
+    "login": "Entrar",
+    "loggingIn": "Entrando...",
+    "logout": "Sair",
+    "createAccount": "Criar conta",
+    "creatingAccount": "Criando conta...",
+    "noAccount": "Não tem uma conta?",
+    "haveAccount": "Já tem uma conta?",
+    "orContinueWith": "ou continue com"
   }
 }

@@ -28,6 +28,7 @@ model User {
   email     String   @unique
   name      String
   passwordHash String?
+  googleId  String?  @unique
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -53,7 +54,9 @@ model Expense {
   s3Key               String
   originalFileUrl     String?
 
-  // Status: processing, extracted, classified, validated, approved, rejected, escalated
+  // Status flow: processing -> extracted -> classified (transient, in-flight)
+  // -> approved (auto, high classification confidence) | escalated (auto, low confidence or pipeline failure)
+  // validated/rejected reserved for a future manual review step
   status              String   @default("processing")
 
   // Extracted Data
