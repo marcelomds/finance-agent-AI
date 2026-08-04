@@ -30,9 +30,11 @@
     "uploadHint": "PDF, JPG, or PNG, up to 10MB",
     "noExpenses": "No expenses yet.",
     "viewFile": "View",
+    "notRecognized": "Not recognized",
     "columns": {
       "file": "File",
       "status": "Status",
+      "amount": "Amount",
       "category": "Category",
       "created": "Created"
     },
