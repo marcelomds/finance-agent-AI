@@ -2,6 +2,7 @@ import { prisma } from '../db/prisma';
 import { classifyExpense } from './ai/classificationAgent';
 import { extractReceiptData } from './ai/visionAgent';
 import { getFileBuffer } from './storage/getFileBuffer';
+import { validateExpense, ExtractedData, DuplicateCandidate } from './validation/validateExpense';
 import { NotFoundError, ClassificationError } from '../api/errors/AppError';
 
 // Classifications below this confidence are routed to a human instead of auto-approved.
@@ -103,7 +104,42 @@ export async function classifyExpensePipeline(organizationId: string, expenseId:
   });
 }
 
+export async function validateExpensePipeline(organizationId: string, expenseId: string) {
+  const expense = await prisma.expense.findFirst({ where: { id: expenseId, organizationId } });
+  if (!expense) throw new NotFoundError('Expense not found');
+
+  const extractedData = expense.extractedData as ExtractedData | null;
+
+  return withProcessingLog(expense.id, 'validation', async () => {
+    const others = await prisma.expense.findMany({
+      where: { organizationId, id: { not: expense.id }, status: { not: 'rejected' } },
+      select: { id: true, extractedData: true },
+    });
+
+    const { issues, passed } = validateExpense(extractedData, others as DuplicateCandidate[]);
+
+    const updated = await prisma.expense.update({
+      where: { id: expense.id },
+      data: {
+        validationIssues: issues,
+        validationPassed: passed,
+        ...(passed
+          ? {}
+          : {
+              status: 'escalated',
+              escalatedAt: new Date(),
+              escalationReason: `Validation failed: ${issues.join(', ')}`,
+              escalationStatus: 'pending',
+            }),
+      },
+    });
+
+    return { result: updated };
+  });
+}
+
 export async function processExpense(organizationId: string, expenseId: string) {
   await extractExpenseDataPipeline(organizationId, expenseId);
-  return classifyExpensePipeline(organizationId, expenseId);
+  await classifyExpensePipeline(organizationId, expenseId);
+  return validateExpensePipeline(organizationId, expenseId);
 }

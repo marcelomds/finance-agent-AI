@@ -10,7 +10,7 @@ Developed at **ME2** | 2026
 
 FinanceAgent automates expense processing: users upload a receipt (PDF/image), Claude Vision extracts the data, a second Claude call classifies it into the organization's own categories, and everything is tracked in a Bull/Redis queue you can watch in real time.
 
-**Status:** working end-to-end for upload → extraction → classification, behind JWT auth (email/password + Google login). Validation and bank reconciliation are not implemented yet.
+**Status:** working end-to-end for upload → extraction → classification → deterministic validation, behind JWT auth (email/password + Google login). Bank reconciliation is not implemented yet.
 
 ---
 
@@ -24,7 +24,8 @@ FinanceAgent automates expense processing: users upload a receipt (PDF/image), C
 - **Storage**: AWS S3 (`@aws-sdk/client-s3`), private bucket + signed URLs
 - **Queue**: Bull + Redis, dashboard via Bull Board
 - **Auth**: JWT (`jsonwebtoken` + `bcryptjs`) for email/password, Google Identity Services (`google-auth-library`) for social login — see [Authentication](#-authentication)
-- **Planned**: validation/reconciliation logic, rate limiting
+- **Testing**: Jest + Babel (`@babel/preset-typescript` strips types, no type-check during tests — that's `tsc`'s job separately)
+- **Planned**: bank reconciliation, rate limiting
 
 ### Frontend
 - **Framework**: React 19 + TypeScript + Vite
@@ -208,7 +209,9 @@ Upload (PDF/JPG/PNG, ≤10MB)
   → Expense created (status: processing)
   → enqueued on the expense-processing queue
       → visionAgent: Claude extracts vendor/amount/date/description (status: extracted)
-      → classificationAgent: Claude picks one of the org's own categories (status: classified)
+      → classificationAgent: Claude picks one of the org's own categories (status: approved | escalated, by confidence)
+      → validateExpense: deterministic checks — date sanity, amount sanity, duplicate detection (no LLM call)
+          any issue found forces status back to escalated, regardless of classification confidence
 ```
 
 Each step logs to `ProcessingLog` (success/failure, duration, tokens used) regardless of outcome. Upload is rejected upfront (422) if the organization has no active categories yet — avoids paying for S3 + Vision on something that can't be classified.
@@ -240,6 +243,7 @@ cd backend
 
 npm run dev          # tsx watch src/index.ts
 npm run build        # tsc
+npm test             # jest — src/**/*.test.ts, prisma mocked (no DB needed)
 npm run db:migrate   # prisma migrate dev
 npm run db:push      # prisma db push
 npx prisma studio    # Prisma GUI
@@ -283,11 +287,10 @@ No deploy step configured yet — added as the project grows.
 
 ## 🗺️ Roadmap (not implemented yet)
 
-- Validation agent (deterministic: date sanity, duplicate detection) — no LLM needed
 - Bank reconciliation (deterministic matching against `BankTransaction`) — no LLM needed
 - Invite flow to join an existing organization (registration currently always creates a new one)
 - Approval/escalation workflow + Slack notifications
-- Tests
+- Test coverage — started (Jest, backend `validation` and `categories` services), still growing
 
 ---
 
